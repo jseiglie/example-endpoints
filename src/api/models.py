@@ -15,20 +15,19 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            "is_active": self.is_active
+            'is_active': self.is_active
             # do not serialize the password, its a security breach
         }
-
+    
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    text = db.Column(db.String(120), unique=True, nullable=False)
-    
+    text  = db.Column(db.String(250), nullable=False)
+
     def __repr__(self):
-        return f'<Post {self.id}>'
+        return f'<Posts {self.id}>'
 
     def serialize(self):
         return {
             "id": self.id,
             "text": self.text,
-            # do not serialize the password, its a security breach
         }

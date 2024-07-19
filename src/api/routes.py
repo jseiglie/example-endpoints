@@ -21,102 +21,86 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
-
-@api.route('/test', methods=['GET'])
-def getTest():
-    return jsonify({'test': 'OK'}),200
-
 @api.route('/all_users', methods=['GET'])
 def get_all_users():
     users = User.query.all()
     print('\n')
-    print('antes del serialize ---> ',users)
+    print('users sin serialize ----> ', users)
     print('\n')
-    users = [user.serialize() for user in users]
+    #users = [user.serialize() for user in users]
+    #print( 'users CON serialize ----> ', users.serialize())
     # aux = []
     # for user in users:
     #     aux.append(user.serialize())
-    # users = list(map(lambda x: x.serialize(), users))
-    print('******************* despues del serialize ---> ',users)
-
-    return jsonify({'msg': 'ok',
-                    'data': users})
-
-@api.route('/all_users_active', methods=['GET'])
-def get_all_active():
-    #users = User.query.filter_by(is_active=True)
-    users = User.query.filter_by(is_active=True)
-    print('\n')
-    print('antes del serialize ---> ',users)
-    print('\n')
-    users = [user.serialize() for user in users]
-    # aux = []
-    # for user in users:
-    #     aux.append(user.serialize())
-    # users = list(map(lambda x: x.serialize(), users))
-    print('******************* despues del serialize ---> ',users)
-
-    return jsonify({'msg': 'ok',
-                    'data': users})
-
+    aux = list(map(lambda x: x.serialize(), users))
+    return jsonify({'msg': 'OK', 'data': aux}), 200
 
 
 @api.route('/one_user/<int:id>', methods=['GET'])
-def get_one_users(id):
-    user = User.query.get(id)
-    print('user antes del serialize ----> ', user)
-    user = user.serialize()
+def get_one_user(id):
+    users = User.query.get(id)
     print('\n')
-    print('user DESPUES del serialize ----> ', user)
-    return jsonify({'msg': 'ok',
-                    'data': user}),200
+    print('users sin serialize ----> ', users)
+    print('\n')
+    print('users CON serialize ----> ', users.serialize())
+    
+    return jsonify({'msg': 'OK', 'user': users.serialize()}), 200
 
+#CRUD --> Create Read Update Delete
+#           POST GET    PUT  DELETE
 
 @api.route('/delete_user/<int:id>', methods=['DELETE'])
 def del_user(id):
     user = User.query.get(id)
-    print(user) 
+    if not user:
+        return jsonify({'msg': 'Error, no se encontró el usuario a eliminar'}), 404
     db.session.delete(user)
     db.session.commit()
-
-    return jsonify({'msg': 'se elimino el usuario ' + user.email,
-                    }),200
-
-#CRUD create read update delete
-#     POST   GET  PUT    DELETE
-
+    return jsonify({'msg': 'Usuario eliminado'})
+    
 @api.route('/add_user', methods=['POST'])
 def add_user():
     data = request.json
-    print('\n')
-    print('lo que recibimos ----> ', data)
-    print('\n')
-    new_user = User(email=data['email'], password=data['password'], is_active=True)
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'msg': 'ok '}),200
+    if data['email'] and data['password']:
+        user = User.query.filter_by(email=data['email']).first()
+        if user:
+            return jsonify({'msg': 'El usuario ya existe, intenta logearte'}), 200
+        new_user = User(email=data['email'], password=data['password'], is_active=True)
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'msg': 'OK', 'user': new_user.serialize()}), 201
 
+    return jsonify({'msg': 'todos los datos son necesarios'}), 400
+    
 @api.route('/edit_user/<int:id>', methods=['PUT'])
 def edit_user(id):
     data = request.json
-    user = User.query.get(id)
-    user.email=data['email']
-    user.is_active= data['is_active']
-    db.session.commit()
-    return jsonify({'msg': 'OK', 'data': user.serialize()}), 200
+    if data['email'] and data['is_active']:
+        user = User.query.get(id)
+        if not user:
+            return jsonify({'msg': 'Error, no se encontró el usuario'}), 404
+        user.email = data['email'] or user.email
+        user.is_active=data['is_active'] or user.is_active
+        db.session.commit()
+        return jsonify({'msg': 'Usuario editado', 'user': user.serialize()})
+    return jsonify({'error': 'Todos los datos son necesarios'})
 
-
-
+   
 @api.route('/deactivate/<int:id>', methods=['PUT'])
-def deactivate_user(id):
+def deactivate(id):
     user = User.query.get(id)
-    user.is_active=False
+    if not user:
+        return jsonify({'msg': 'Error, no se encontró el usuario'}), 404
+    user.is_active = False
     db.session.commit()
-    return jsonify({'msg': 'OK', 'data': user.serialize()}), 200
+    return jsonify({'msg': 'OK, usuario desactivado'})
 
+     
 @api.route('/activate/<int:id>', methods=['PUT'])
-def activate_user(id):
+def activate(id):
     user = User.query.get(id)
-    user.is_active=True
+    if not user:
+        return jsonify({'msg': 'Error, no se encontró el usuario'}), 404
+    user.is_active = True
     db.session.commit()
-    return jsonify({'msg': 'OK', 'data': user.serialize()}), 200
+    return jsonify({'msg': 'OK, usuario activado'})

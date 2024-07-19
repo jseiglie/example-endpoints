@@ -24,9 +24,9 @@ const getState = ({ getStore, getActions, setStore }) => {
 			getMessage: async () => {
 				try{
 					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello")
+					const resp = await fetch(process.env.BACKEND_URL + "/api/one_user/1")
 					const data = await resp.json()
-					setStore({ message: data.message })
+					setStore({ message: data.user })
 					// don't forget to return something, that is how the async resolves
 					return data;
 				}catch(error){
